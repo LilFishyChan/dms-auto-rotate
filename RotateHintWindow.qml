@@ -108,7 +108,7 @@ PanelWindow {
                ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.96)
                : Theme.withAlpha(Theme.surfaceContainerHigh, 0.88)
         border.width: 1
-        border.color: Theme.withAlpha(Theme.outline, 0.35)
+        border.color: Theme.withAlpha(Theme.primary, 0.45)
 
         DankIcon {
             id: icon

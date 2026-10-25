@@ -41,6 +41,10 @@ DEFAULTS = {
 
 MAP = {"y_pos": "normal", "y_neg": "180", "x_pos": "270", "x_neg": "90"}
 
+# 平放死区：X、Y 都很小时重力几乎全在 Z 轴，方向无意义。
+# 没有这个门槛时平放期间传感器噪声会让 |Y| 偶尔压过 |X|，方向在两种朝向之间乱跳。
+FLAT_THRESHOLD = 2.5   # m/s²
+
 RE_XYZ = re.compile(r"X=([-\d.]+)\s+Y=([-\d.]+)\s+Z=([-\d.]+)")
 G_ACCEL = 9.80665
 
@@ -290,6 +294,10 @@ def decide(x, y, cfg):
         x = -x
     if cfg["invert_y"]:
         y = -y
+    # 平放（重力在 Z 轴）时不做方向判定，避免噪声导致来回跳
+    if abs(x) < FLAT_THRESHOLD and abs(y) < FLAT_THRESHOLD:
+        return None
+
     ratio = cfg["dominate_ratio_x10"] / 10.0
     if abs(x) >= abs(y) * ratio:
         return MAP["x_pos"] if x > 0 else MAP["x_neg"]
