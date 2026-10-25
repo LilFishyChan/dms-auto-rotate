@@ -253,7 +253,27 @@ PluginSettings {
     ToggleSetting {
         settingKey: "show_rotate_hint"
         label: settings.tr("Rotation hint button")
-        description: settings.tr("While auto-rotate is off, show a round rotate button in the bottom-left corner whenever the device is turned away from the current screen orientation. Tapping it rotates the screen to match.")
+        description: settings.tr("While auto-rotate is off, show a round rotate button whenever the device is turned away from the current screen orientation. Tapping it rotates the screen to match.")
+        defaultValue: true
+    }
+
+    SelectionSetting {
+        settingKey: "hint_corner"
+        label: settings.tr("Hint corner")
+        description: settings.tr("Which corner of the device the button sits in, measured with the device held upright. It is pinned to the physical corner, so it stays in the same place on the hardware when the screen turns.")
+        defaultValue: "bottom-left"
+        options: [
+            { label: settings.tr("Bottom left"), value: "bottom-left" },
+            { label: settings.tr("Bottom right"), value: "bottom-right" },
+            { label: settings.tr("Top left"), value: "top-left" },
+            { label: settings.tr("Top right"), value: "top-right" }
+        ]
+    }
+
+    ToggleSetting {
+        settingKey: "hint_follow_rotation"
+        label: settings.tr("Hint follows rotation")
+        description: settings.tr("Keep the button attached to the same physical corner of the device as the screen turns. Turn this off to pin it to the same corner of the screen instead.")
         defaultValue: true
     }
 }

@@ -2,7 +2,7 @@
     "id": "nabuAutoRotate",
     "name": "Auto Rotate",
     "description": "Accelerometer-based screen rotation for niri",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "author": "LilFishyChan",
     "icon": "screen_rotation",
     "type": "composite",

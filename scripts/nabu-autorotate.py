@@ -29,7 +29,9 @@ LOG = os.path.join(STATE_DIR, "log")
 STATE_FILE = os.path.join(STATE_DIR, "state.json")
 
 DEFAULTS = {
-    "active": True,
+    # 不能叫 active：DMS 会在插件加载时把这个键当自己的状态重置掉，
+    # 重启几次自动旋转就永远是关的
+    "autorotate_on": True,
     "output": "",
     "sensor_backend": "auto",   # auto | iio | ssccli | sysfs              # 空 = 自动取第一个输出
     "swap_xy": False,
@@ -81,6 +83,13 @@ def log(msg):
 
 # ───────────────────────────── 配置 ─────────────────────────────
 
+def _migrate_active(cfg):
+    """老配置里叫 active，DMS 会重置它；读到就搬到 autorotate_on。"""
+    if "active" in cfg and "autorotate_on" not in cfg:
+        cfg["autorotate_on"] = bool(cfg.pop("active"))
+    return cfg
+
+
 def load_settings():
     raw = {}
     try:
@@ -88,6 +97,7 @@ def load_settings():
             raw = json.load(f).get(PLUGIN_ID, {})
     except Exception:
         pass
+    raw = _migrate_active(dict(raw))
     s = dict(DEFAULTS)
     s.update({k: raw[k] for k in DEFAULTS if k in raw})
     return s
@@ -277,12 +287,14 @@ def pick_backend(preferred="auto"):
     iio 只有在方向真的可信时才能用 —— 固件 mount matrix 全 0 的设备上它会
     返回非 undefined 但完全错误的方向（实测 nabu 上竖放报 right-up）。
     """
+    # auto：先试 ssccli。这类平板（骁龙 SSC）上 iio 的固件 mount matrix 常常
+    # 全是 0，方向不可信；而且 claim 可能被 polkit 拒，白白占一次传感器。
+    if preferred in ("ssccli", "auto") and shutil.which("ssccli"):
+        return "ssccli (Qualcomm SSC)", ssccli_stream
     if preferred in ("iio", "auto") and iio_probe():
         return "iio-sensor-proxy", iio_stream
     if preferred == "iio":
         log("指定的 iio 后端不可用，回退自动探测")
-    if preferred in ("ssccli", "auto") and shutil.which("ssccli"):
-        return "ssccli (Qualcomm SSC)", ssccli_stream
     if preferred == "ssccli":
         log("指定的 ssccli 不可用，回退自动探测")
     dev = sysfs_accel_device()
@@ -337,7 +349,7 @@ def main():
 
     candidate = None
     candidate_since = 0.0
-    last_active = cfg["active"]
+    last_active = cfg["autorotate_on"]
     last_reported = None
     first_frame = True
 
@@ -378,11 +390,11 @@ def main():
                     log("新后端不可用，保持原后端")
             if new != cfg:
                 log("配置已更新: "
-                    f"{ {k: new[k] for k in ('active','output','sensor_backend','swap_xy','invert_x','invert_y','debounce_ms','dominate_ratio_x10')} }")
+                    f"{ {k: new[k] for k in ('autorotate_on','output','sensor_backend','swap_xy','invert_x','invert_y','debounce_ms','dominate_ratio_x10')} }")
             cfg = new
 
         now = time.time()
-        on = bool(cfg["active"])
+        on = bool(cfg["autorotate_on"])
         changed = (on != last_active)
         if changed:
             last_active = on

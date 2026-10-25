@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.Common
 import qs.Widgets
+import qs.DCommon.Widgets as DCommon
 
 // 自动旋转关闭时的小浮层：设备转了但屏幕没转，左下角出现一个圆形旋转按钮，
 // 点一下就把屏幕转到当前设备方向。跟 Android 的做法一样。
@@ -44,20 +45,48 @@ PanelWindow {
     }
 
     color: "transparent"
-    anchors {
-        bottom: true
-        left: true
+
+    // 基准角是"设备竖着时"的角。屏幕转了之后，物理上的同一个角会跑到屏幕
+    // 的另一边，所以按 appliedTransform 换角 —— 浮窗始终贴在设备的固定角落，
+    // 不会跟着画面转来转去。
+    property string baseCorner: "bottom-left"
+    property bool followRotation: true
+
+    readonly property string corner: {
+        // 顺时针排列：左下 → 左上 → 右上 → 右下
+        const order = ["bottom-left", "top-left", "top-right", "bottom-right"]
+        let i = order.indexOf(baseCorner)
+        if (i < 0)
+            i = 0
+        // 不跟随：固定用屏幕坐标的角落（转屏后它就在画面里换个位置）
+        if (!followRotation)
+            return order[i]
+        if (appliedTransform === "90")
+            i = (i + 1) % 4
+        else if (appliedTransform === "180")
+            i = (i + 2) % 4
+        else if (appliedTransform === "270")
+            i = (i + 3) % 4
+        return order[i]
     }
-    margins {
-        bottom: 28
-        left: 28
-    }
+
+    anchors.bottom: corner.indexOf("bottom") >= 0
+    anchors.top: corner.indexOf("top") >= 0
+    anchors.left: corner.indexOf("left") >= 0
+    anchors.right: corner.indexOf("right") >= 0
+    margins.bottom: 28
+    margins.top: 28
+    margins.left: 28
+    margins.right: 28
     implicitWidth: 44
     implicitHeight: 44
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     WlrLayershell.namespace: "nabu-rotate-hint"
+    // -1 = 忽略其他 surface 预留的区域，锚到真正的屏幕边缘（否则会被顶部栏
+    // 或底部 dock 挤开，看起来就"不在角落"）
+    WlrLayershell.exclusiveZone: -1
 
     // ── 轮询状态 ──────────────────────────────────────────
     Timer {
@@ -74,15 +103,20 @@ PanelWindow {
             "import json,sys\n" +
             "settings='" + Quickshell.env("HOME") + "/.config/dms/plugin_settings.json'\n" +
             "hint=True\n" +
+            "corner='bottom-left'\n" +
+            "follow=True\n" +
             "try:\n" +
-            "  hint=json.load(open(settings)).get('nabuAutoRotate',{}).get('show_rotate_hint',True)\n" +
+            "  _c=json.load(open(settings)).get('nabuAutoRotate',{})\n" +
+            "  hint=_c.get('show_rotate_hint',True)\n" +
+            "  corner=_c.get('hint_corner','bottom-left')\n" +
+            "  follow=_c.get('hint_follow_rotation',True)\n" +
             "except Exception: pass\n" +
             "try:\n" +
             "  d=json.load(open('" + root.stateFile + "'))\n" +
             "  print(1 if hint else 0, 1 if d.get('active') else 0, 1 if d.get('pending') else 0,\n" +
-            "        d.get('sensor_transform',''), d.get('applied_transform',''), d.get('output',''))\n" +
+            "        d.get('sensor_transform',''), d.get('applied_transform',''), d.get('output',''), corner, 1 if follow else 0)\n" +
             "except Exception:\n" +
-            "  print(1 if hint else 0, '1 0   ')\n"]
+            "  print(1 if hint else 0, '1 0   ', corner, 1 if follow else 0)\n"]
         stdout: SplitParser {
             onRead: line => {
                 const p = line.trim().split(/\s+/)
@@ -94,6 +128,8 @@ PanelWindow {
                     root.sensorTransform = p[3] || ""
                     root.appliedTransform = p[4] || ""
                     root.output = p[5] || ""
+                    root.baseCorner = p[6] || "bottom-left"
+                    root.followRotation = p[7] !== "0"
                     root.pending = p[2] === "1"
                 }
             }
@@ -110,7 +146,7 @@ PanelWindow {
         border.width: 1
         border.color: Theme.withAlpha(Theme.primary, 0.45)
 
-        DankIcon {
+        DCommon.DIcon {
             id: icon
             anchors.centerIn: parent
             name: "screen_rotation"

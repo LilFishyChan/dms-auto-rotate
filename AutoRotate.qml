@@ -4,6 +4,7 @@ import Quickshell.Io
 import qs.Common
 import qs.Services
 import qs.Widgets
+import qs.DCommon.Widgets as DCommon
 import qs.Modules.Plugins
 
 PluginComponent {
@@ -25,7 +26,7 @@ PluginComponent {
         id: queryProc
         command: ["python3", "-c",
             "import json;d=json.load(open('" + root.dmsSettings + "'));" +
-            "print('on' if d.get('nabuAutoRotate',{}).get('active',True) else 'off')"]
+            "print('on' if d.get('nabuAutoRotate',{}).get('autorotate_on',True) else 'off')"]
         stdout: SplitParser {
             onRead: line => root.isEnabled = (line.trim() === "on")
         }
@@ -41,7 +42,7 @@ PluginComponent {
         isEnabled = on                        // 立即反馈
         toggleProc.command = ["python3", "-c",
             "import json;p='" + root.dmsSettings + "';d=json.load(open(p));" +
-            "d.setdefault('nabuAutoRotate',{})['active']=" + (on ? "True" : "False") + ";" +
+            "d.setdefault('nabuAutoRotate',{})['autorotate_on']=" + (on ? "True" : "False") + ";" +
             "json.dump(d,open(p,'w'),indent=2)"]
         toggleProc.running = true
     }
@@ -60,7 +61,7 @@ PluginComponent {
     horizontalBarPill: Component {
         Row {
             spacing: Theme.spacingS
-            DankIcon {
+            DCommon.DIcon {
                 name: "screen_rotation"
                 size: Theme.iconSize
                 color: root.isEnabled ? Theme.primary : Theme.surfaceVariantText
@@ -70,7 +71,7 @@ PluginComponent {
     }
 
     verticalBarPill: Component {
-        DankIcon {
+        DCommon.DIcon {
             name: "screen_rotation"
             size: Theme.iconSize
             color: root.isEnabled ? Theme.primary : Theme.surfaceVariantText
