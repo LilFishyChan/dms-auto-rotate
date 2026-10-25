@@ -1,0 +1,23 @@
+{
+  "id": "nabuAutoRotate",
+  "name": "Auto Rotate",
+  "description": "Accelerometer-based screen rotation for niri",
+  "version": "0.1.0",
+  "author": "LilFishyChan",
+  "icon": "screen_rotation",
+  "type": "composite",
+  "capabilities": [
+    "daemon",
+    "dankbar-widget"
+  ],
+  "components": {
+    "daemon": "./Daemon.qml",
+    "widget": "./AutoRotate.qml"
+  },
+  "settings": "./AutoRotateSettings.qml",
+  "permissions": [
+    "settings_read",
+    "settings_write",
+    "process"
+  ]
+}
