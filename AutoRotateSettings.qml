@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Common
 import qs.Widgets
+import qs.DCommon.Widgets as DCommon
 import qs.Modules.Plugins
 
 PluginSettings {
@@ -12,6 +13,42 @@ PluginSettings {
     function tr(term) {
         return I18n.trFor("nabuAutoRotate", term);
     }
+
+    // ---- 启动阶段的写入守卫 ----
+    // DMS 会在插件数据从磁盘加载之前就预创建设置页；此时每个 Setting 的
+    // loadValue() 只能拿到 defaultValue，而 onValueChanged 会立刻把这个默认值
+    // 保存回去，把磁盘上的真实设置冲掉（症状：重启 DMS 后设置全变回默认）。
+    // 所以在数据就绪之前一律拦住写入，就绪后再统一重读一遍。
+    property bool savingEnabled: false
+
+    function saveValue(key, value) {
+        if (!settings.savingEnabled)
+            return
+        if (pluginService && pluginService.savePluginData) {
+            pluginService.savePluginData(pluginId, key, value)
+            settingChanged()
+        }
+    }
+
+    Timer {
+        interval: 1200
+        running: true
+        repeat: false
+        onTriggered: {
+            // 此刻数据已就绪，先把所有控件重读成真实值
+            const stack = [settings]
+            while (stack.length > 0) {
+                const item = stack.pop()
+                if (typeof item.loadValue === "function")
+                    item.loadValue()
+                for (let i = 0; i < item.children.length; i++)
+                    stack.push(item.children[i])
+            }
+            // 之后才允许写入
+            settings.savingEnabled = true
+        }
+    }
+
 
     // 真实输出列表，由 niri 动态填充
     property var outputOptions: [{ label: tr("Auto (first output)"), value: "auto" }]
@@ -31,6 +68,55 @@ PluginSettings {
                     settings.outputOptions = opts
                 } catch (e) {
                     console.log("nabuAutoRotate: failed to read output list:", e)
+                }
+            }
+        }
+    }
+
+
+    // 滑块 + 右侧重置图标；只在值偏离默认值时出现
+    component ResettableSlider: Column {
+        id: rs
+        property string settingKey
+        property string label
+        property string description: ""
+        property int defaultValue: 0
+        property int minimum: 0
+        property int maximum: 100
+        property string unit: ""
+
+        width: parent.width
+        spacing: 0
+
+        SliderSetting {
+            id: slider
+            width: rs.width
+            settingKey: rs.settingKey
+            label: rs.label
+            description: rs.description
+            defaultValue: rs.defaultValue
+            minimum: rs.minimum
+            maximum: rs.maximum
+            unit: rs.unit
+        }
+
+        Item {
+            width: rs.width
+            height: 20
+            visible: slider.value !== rs.defaultValue
+
+            DCommon.DIcon {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                name: "restart_alt"
+                size: 15
+                color: Theme.primary
+
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -6
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: slider.value = rs.defaultValue
                 }
             }
         }
@@ -134,7 +220,7 @@ PluginSettings {
         topPadding: Theme.spacingM
     }
 
-    SliderSetting {
+    ResettableSlider {
         settingKey: "debounce_ms"
         label: settings.tr("Debounce")
         description: settings.tr("How long a direction must hold before the screen rotates; too small makes it flicker while turning")
@@ -144,7 +230,7 @@ PluginSettings {
         unit: " ms"
     }
 
-    SliderSetting {
+    ResettableSlider {
         settingKey: "dominate_ratio_x10"
         label: settings.tr("Dominant-axis threshold")
         description: settings.tr("How much the main axis must exceed the other before a direction is decided (x0.1); raise it to stop twitching when the device lies at an angle")
