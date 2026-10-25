@@ -14,7 +14,7 @@ PluginSettings {
     }
 
     // 真实输出列表，由 niri 动态填充
-    property var outputOptions: [{ label: tr("Auto (first output)"), value: "" }]
+    property var outputOptions: [{ label: tr("Auto (first output)"), value: "auto" }]
 
     Component.onCompleted: listOutputs.running = true
 
@@ -25,7 +25,7 @@ PluginSettings {
             onStreamFinished: {
                 try {
                     const d = JSON.parse(text)
-                    const opts = [{ label: settings.tr("Auto (first output)"), value: "" }]
+                    const opts = [{ label: settings.tr("Auto (first output)"), value: "auto" }]
                     for (const k in d)
                         opts.push({ label: k, value: k })
                     settings.outputOptions = opts

@@ -130,14 +130,20 @@ def niri_outputs(sock):
 
 
 def resolve_output(sock, preferred):
-    """设置里指定了就用它，否则取第一个。"""
+    """设置里指定了就用它，否则取第一个。
+
+    "auto"（以及历史配置里残留的空串）表示「用第一个输出」，不算错误，
+    不报警 —— DMS 的 SelectionSetting 曾经把中文标签写进配置，迁移后统一成
+    auto 这个哨兵值。
+    """
     outs = niri_outputs(sock)
     if not outs:
         return None
-    if preferred and preferred in outs:
+    if preferred in ("", "auto"):
+        return next(iter(outs))
+    if preferred in outs:
         return preferred
-    if preferred:
-        log(f"指定的输出 {preferred} 不存在，改用第一个")
+    log(f"指定的输出 {preferred} 不存在，改用第一个")
     return next(iter(outs))
 
 
