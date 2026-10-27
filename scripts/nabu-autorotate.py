@@ -241,17 +241,36 @@ def iio_stream():
 
 
 def ssccli_stream():
-    proc = subprocess.Popen(
-        ["ssccli", "--sensor", "accelerometer", "--timeout", "86400"],
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1,
-    )
-    try:
-        for line in proc.stdout:
-            m = RE_XYZ.search(line)
-            if m:
-                yield float(m.group(1)), float(m.group(2))
-    finally:
-        proc.terminate()
+    """ssccli 没有流式参数，只有 --timeout（运行 N 秒后退出）。
+
+    给一个很大的 timeout 看起来像"长流"，实际会让它常驻并且占满一个 CPU 核
+    （实测 --timeout 86400 稳定吃 99.6%），在电池设备上是灾难。所以按短周期
+    反复重开：每次 2 秒，读完接着起下一个，开销远小于常驻空转。
+
+    外面必须再套一层 `timeout -k`：ssccli 自己的 --timeout 只是在 SLPI 正常
+    响应时计时，一旦 SLPI 卡住它既不输出也不退出，`for line in proc.stdout`
+    就会永久阻塞，进程挂在那里 99% CPU 狂刷 SLPI。实测这个卡死进程会把 SLPI
+    的 sensor_process 初始化压到看门狗超时（每 40 秒崩一次），SLPI 崩溃期间
+    I2C 总线被干扰，连累 LN8000 充电芯片的状态寄存器读错 —— 表现为直充突然
+    disable、ADC 读到恒定假值。外部 timeout 是唯一能兜住这种情况的手段。
+    """
+    while True:
+        proc = subprocess.Popen(
+            ["timeout", "-k", "2", "6",
+             "ssccli", "--sensor", "accelerometer", "--timeout", "2"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1,
+        )
+        try:
+            for line in proc.stdout:
+                m = RE_XYZ.search(line)
+                if m:
+                    yield float(m.group(1)), float(m.group(2))
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=2)
+            except Exception:
+                proc.kill()
 
 
 def sysfs_accel_device():
