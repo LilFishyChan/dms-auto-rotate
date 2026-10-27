@@ -1,6 +1,5 @@
 {
     "Auto Rotate": {
-        "Auto (first output)": "自动（第一个输出）",
         "Auto Rotate": "自动旋转",
         "Behaviour": "行为调整",
         "Bottom left": "左下",
@@ -31,7 +30,6 @@
         "Top right": "右上",
         "When disabled": "关闭时",
         "Which corner of the device the button sits in, measured with the device held upright. It is pinned to the physical corner, so it stays in the same place on the hardware when the screen turns.": "浮窗贴在设备的哪个角（按竖着拿的方向算）。它钉在物理角落上，屏幕转了也不会跟着跑。",
-        "Which niri output to rotate; with multiple monitors pick the one you want (default: the first)": "自动旋转作用的输出；多屏时指定要用哪一块，默认第一个",
         "While auto-rotate is off, show a round rotate button whenever the device is turned away from the current screen orientation. Tapping it rotates the screen to match.": "自动旋转关闭时，设备转向和屏幕不一致就显示一个圆形旋转按钮，点一下把屏幕转过去。",
         "iio-sensor-proxy": "iio-sensor-proxy",
         "sysfs": "sysfs",

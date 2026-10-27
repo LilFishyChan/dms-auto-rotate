@@ -2,11 +2,15 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Common
-import qs.Modules.Plugins
 
 // 常驻守护进程 surface：跟 UI 可见性无关。
 // 放在 widget 里的话，只有控制中心打开时 Process 才活着 —— 关掉面板自动旋转就停了。
-PluginComponent {
+//
+// 根必须是 ShellRoot 而不是 PluginComponent：后者没有进入图形场景，
+// Quickshell 会打 "Created graphical object was not placed in the graphics
+// scene"，而这个 surface 里的 Process 也就一直没被启动过 —— 表现为插件
+// 显示已加载、配置也读到了，但加速度计根本没人采。
+ShellRoot {
     id: root
 
     readonly property string pluginDir: Qt.resolvedUrl(".").toString().replace("file://", "")

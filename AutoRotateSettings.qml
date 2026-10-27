@@ -51,7 +51,7 @@ PluginSettings {
 
 
     // 真实输出列表，由 niri 动态填充
-    property var outputOptions: [{ label: tr("Auto (first output)"), value: "auto" }]
+    property var outputOptions: []
 
     Component.onCompleted: listOutputs.running = true
 
@@ -62,10 +62,13 @@ PluginSettings {
             onStreamFinished: {
                 try {
                     const d = JSON.parse(text)
-                    const opts = [{ label: settings.tr("Auto (first output)"), value: "auto" }]
+                    const opts = []
                     for (const k in d)
                         opts.push({ label: k, value: k })
                     settings.outputOptions = opts
+                    // 当前值不在探测到的列表里（例如首次的空值）→ 落到第一个输出
+                    if (opts.length && !opts.some(o => o.value === settings.output))
+                        settings.output = opts[0].value
                 } catch (e) {
                     console.log("nabuAutoRotate: failed to read output list:", e)
                 }
@@ -143,7 +146,7 @@ PluginSettings {
     SelectionSetting {
         settingKey: "output"
         label: settings.tr("Bound display")
-        description: settings.tr("Which niri output to rotate; with multiple monitors pick the one you want (default: the first)")
+        description: settings.tr("Which niri output to rotate; with multiple monitors pick the one you want")
         defaultValue: ""
         options: settings.outputOptions
     }
