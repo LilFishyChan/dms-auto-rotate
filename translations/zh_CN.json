@@ -2,8 +2,6 @@
     "Auto Rotate": {
         "Auto (first output)": "自动（第一个输出）",
         "Auto Rotate": "自动旋转",
-        "Auto picks the first backend that works. Pin it when auto-detection lands on a backend that reports the wrong orientation (common when the firmware mount matrix is all zeros and iio-sensor-proxy falls back to identity).": "自动会选择第一个能用的后端。如果自动探测选中的后端方向不对（固件 mount matrix 全 0、iio-sensor-proxy 退回 identity 时常见），在这里固定指定一个。",
-        "Auto-detect": "自动探测",
         "Behaviour": "行为调整",
         "Bottom left": "左下",
         "Bottom right": "右下",
@@ -36,6 +34,7 @@
         "Which niri output to rotate; with multiple monitors pick the one you want (default: the first)": "自动旋转作用的输出；多屏时指定要用哪一块，默认第一个",
         "While auto-rotate is off, show a round rotate button whenever the device is turned away from the current screen orientation. Tapping it rotates the screen to match.": "自动旋转关闭时，设备转向和屏幕不一致就显示一个圆形旋转按钮，点一下把屏幕转过去。",
         "iio-sensor-proxy": "iio-sensor-proxy",
-        "sysfs": "sysfs"
+        "sysfs": "sysfs",
+        "Which interface to read the accelerometer from. Pick the one that reports the correct orientation on this device; iio-sensor-proxy is unavailable when the firmware mount matrix is all zeros.": "从哪个接口读加速度计。选择在本设备上能报出正确方向的接口；固件 mount matrix 全 0 时 iio-sensor-proxy 不可用。"
     }
 }

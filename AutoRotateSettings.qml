@@ -161,10 +161,9 @@ PluginSettings {
     SelectionSetting {
         settingKey: "sensor_backend"
         label: settings.tr("Sensor backend")
-        description: settings.tr("Auto picks the first backend that works. Pin it when auto-detection lands on a backend that reports the wrong orientation (common when the firmware mount matrix is all zeros and iio-sensor-proxy falls back to identity).")
-        defaultValue: "auto"
+        description: settings.tr("Which interface to read the accelerometer from. Pick the one that reports the correct orientation on this device; iio-sensor-proxy is unavailable when the firmware mount matrix is all zeros.")
+        defaultValue: "iio"
         options: [
-            { label: settings.tr("Auto-detect"), value: "auto" },
             { label: settings.tr("iio-sensor-proxy"), value: "iio" },
             { label: settings.tr("Qualcomm SSC (ssccli)"), value: "ssccli" },
             { label: settings.tr("sysfs"), value: "sysfs" }

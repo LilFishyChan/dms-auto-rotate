@@ -33,7 +33,7 @@ DEFAULTS = {
     # 重启几次自动旋转就永远是关的
     "autorotate_on": True,
     "output": "",
-    "sensor_backend": "auto",   # auto | iio | ssccli | sysfs              # 空 = 自动取第一个输出
+    "sensor_backend": "iio",    # iio | ssccli | sysfs（"auto" 仍接受，兼容旧配置）
     "swap_xy": False,
     "invert_x": False,
     "invert_y": False,
@@ -357,7 +357,7 @@ def main():
         log("找不到任何 niri 输出，退出")
         return 1
 
-    backend_name, backend = pick_backend(cfg.get("sensor_backend", "auto"))
+    backend_name, backend = pick_backend(cfg.get("sensor_backend", "iio"))
     if not backend:
         log("没有可用的传感器后端（iio-sensor-proxy / ssccli / sysfs 都不可用），退出")
         return 1
